@@ -73,7 +73,7 @@ def get_llm_config() -> Dict[str, Any]:
     return {
         "anthropic_key_configured": bool(key),
         "anthropic_key_masked": f"{key[:8]}...{key[-4:]}" if key else "NOT_CONFIGURED",
-        "anthropic_model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5-gama"),
+        "anthropic_model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
         "ollama_base_url": os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
         "ollama_fast_model": os.environ.get("OLLAMA_FAST_MODEL", "llama3.2:1b"),
         "ollama_reasoning_model": os.environ.get("OLLAMA_REASONING_MODEL", "qwen3.8:27b"),
@@ -87,7 +87,7 @@ def get_rag_data_dir() -> Path:
     Returns the canonical, verified Path to data/sample_documents containing turbomachinery_manual.md.
     """
     candidates = [
-        Path(r"C:\Users\Administrator\Desktop\UST-Agentic-AI\UST-AgenticAI\RAG_ContxtEngg_Labs\data\sample_documents"),
+        Path(r"c:\Users\jadid\Desktop\MyWork\Techademy\UST\RAG_ContxtEngg_Labs\data\sample_documents"),
         Path(__file__).parent / "UST" / "RAG_ContxtEngg_Labs" / "data" / "sample_documents",
         Path(__file__).parent / "RAG_ContxtEngg_Labs" / "data" / "sample_documents",
         Path(__file__).parent / "data" / "sample_documents",
@@ -133,7 +133,7 @@ def call_rag_llm(
     if anthropic_key:
         t0 = time.time()
         try:
-            url = "https://llmproxy.ustrnd.com/v1/messages"
+            url = "https://api.anthropic.com/v1/messages"
             headers = {
                 "x-api-key": anthropic_key,
                 "anthropic-version": "2023-06-01",
@@ -142,7 +142,7 @@ def call_rag_llm(
             body = {
                 "model": target_anthropic_model,
                 "max_tokens": max_tokens,
-                #"temperature": temperature,
+                "temperature": temperature,
                 "system": system_prompt,
                 "messages": [{"role": "user", "content": prompt}],
             }
@@ -236,7 +236,7 @@ def call_rag_vision(
     if anthropic_key:
         t0 = time.time()
         try:
-            url = "https://llmproxy.ustrnd.com/v1/messages"
+            url = "https://api.anthropic.com/v1/messages"
             headers = {
                 "x-api-key": anthropic_key,
                 "anthropic-version": "2023-06-01",
