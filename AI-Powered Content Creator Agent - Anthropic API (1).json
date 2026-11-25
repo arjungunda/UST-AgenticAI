@@ -1,0 +1,757 @@
+{
+  "name": "AI-Powered Content Creator Agent - Anthropic API",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "62c16922-1cc0-40b1-a0b2-ca1f216e8fb4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nx5sujHArfQ5Lhxm7Duhz12UNZRm_JWYbEXd1Vy1JnA",
+          "mode": "list",
+          "cachedResultName": "AI_Content_Creator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nx5sujHArfQ5Lhxm7Duhz12UNZRm_JWYbEXd1Vy1JnA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nx5sujHArfQ5Lhxm7Duhz12UNZRm_JWYbEXd1Vy1JnA/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "84613587-7c92-4498-900b-8b7ae9d52c05",
+      "name": "Get Pending Topic",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -352,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gqviizMI0yNUDfSM",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.Status ?? \"\").trim().toLowerCase() }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "leftValue": "={{ String($json.Topic ?? \"\").trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "id": "1db48335-4543-4140-9fae-bda17cf63495",
+      "name": "Skip Completed Topics",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        -128,
+        80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3ad25e34-513c-417c-9aa2-8b7f2b62a8a6",
+      "name": "Pick Next Topic",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        96,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json.Topic }}\",\n  \"search_depth\": \"advanced\",\n  \"topic\": \"general\",\n  \"max_results\": 5,\n  \"include_answer\": true,\n  \"include_raw_content\": false\n}",
+        "options": {}
+      },
+      "id": "e943f8c4-ae12-4f17-81d7-54b89c5fc188",
+      "name": "Tavily – Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        320,
+        80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Gyj9mibCae4jxyCw",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "2b7980d6-e02c-482c-b7f9-1cc6035085e1",
+      "name": "Split Research Results",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "research_results",
+        "options": {}
+      },
+      "id": "290b9d69-9bdc-410b-8358-358589051a01",
+      "name": "Aggregate Research",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        768,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1c77fe1-ca12-4dd3-847e-c3fb2493967e",
+              "name": "Topic",
+              "value": "={{ $('Pick Next Topic').first().json.Topic }}",
+              "type": "string"
+            },
+            {
+              "id": "7c101f10-2187-4d42-817c-666d761a9d9a",
+              "name": "=Row_Number",
+              "value": "={{ $('Pick Next Topic').first().json.row_number }}",
+              "type": "number"
+            },
+            {
+              "id": "ebcaaab5-0f43-4511-97ec-331b661ebb64",
+              "name": "Research_Context",
+              "value": "={{ $json.research_results.map((r, i) =>   `Source ${i+1} Title: ${r.results.title} URL: ${r.results.url} Content: ${r.results.content}` ).join('\\n\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6e5cd579-3c2e-41ed-be6e-b2a8044765d3",
+      "name": "Prepare Research Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        992,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({ model: \"claude-haiku-4-5-20251001\", max_tokens: 1024, system: \"You are an expert social media content creator\\nspecializing in LinkedIn.\\n\\nYour responsibility is to create concise,\\nengaging and informative posts about technology.\\n\\nFollow these instructions:\\n\\n1. Write in a crisp and engaging style.\\n2. Start with an attention-grabbing statement.\\n3. Communicate the most important insight.\\n4. Avoid unnecessary explanations.\\n5. Use simple and accessible language.\\n6. Maintain technical accuracy.\\n7. Never invent facts, statistics or claims.\\n8. Include relevant hashtags where appropriate.\\n9. Encourage engagement naturally.\\n\\nLENGTH REQUIREMENT:\\nThe final post should be between 100-250 words, optimized for professional networking,\\nincluding spaces and hashtags.\\n\\nQUALITY REQUIREMENTS:\\n- Focus on one key insight.\\n- Avoid repetitive statements.\\n- Use research-supported information.\\n- Avoid excessive hashtags.\\n- Do not use unsupported statistics.\\n\\nOUTPUT FORMAT:\\nReturn only the final LinkedIn post.\\nDo not include explanations or commentary.\", messages: [{ role: \"user\", content: `Create an engaging LinkedIn post about the following\ntopic.\n\nTOPIC:\n${$json.Topic}\n\nRESEARCH INFORMATION:\n${$json.Research_Context}\n\nIdentify the most interesting insight and\ncommunicate it in a concise and engaging manner.\n\nThe content should be relevant to technology\nprofessionals and business leaders.\n\nEnsure the final response is between 100-250 words.` }], temperature: 0.4 }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "72e88ce7-a6b5-47e0-a29b-72e3c412cd3d",
+      "name": "Anthropic - LinkedIn Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        -112
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "pYRVz4rqDxRJYUmZ",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b0d3d9b0-f7a6-416d-a361-94964b6d79fa",
+              "name": "LinkedIn_Post",
+              "value": "={{ $json.content[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "847af6c4-9ee6-4424-82ef-80959b6ec5b4",
+              "name": "Topic",
+              "value": "={{ $('Prepare Research Context').first().json.Topic }}",
+              "type": "string"
+            },
+            {
+              "id": "151f42d1-eac0-44c8-bd89-ba92c026a55a",
+              "name": "=Row_Number",
+              "value": "={{ $('Prepare Research Context').first().json.Row_Number }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "09e290c0-aa22-4b43-bdba-8ae63f7924f2",
+      "name": "Prepare LinkedIn Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1440,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({ model: \"claude-haiku-4-5-20251001\", max_tokens: 1024, system: \"You are an expert social media content creator\\nspecializing in X (formerly Twitter).\\n\\nYour responsibility is to create concise,\\nengaging and informative posts about technology.\\n\\nFollow these instructions:\\n\\n1. Write in a crisp and engaging style.\\n2. Start with an attention-grabbing statement.\\n3. Communicate the most important insight.\\n4. Avoid unnecessary explanations.\\n5. Use simple and accessible language.\\n6. Maintain technical accuracy.\\n7. Never invent facts, statistics or claims.\\n8. Include relevant hashtags where appropriate.\\n9. Encourage engagement naturally.\\n\\nLENGTH REQUIREMENT:\\nThe final post must not exceed 280 characters,\\nincluding spaces and hashtags.\\n\\nQUALITY REQUIREMENTS:\\n- Focus on one key insight.\\n- Avoid repetitive statements.\\n- Use research-supported information.\\n- Avoid excessive hashtags.\\n- Do not use unsupported statistics.\\n\\nOUTPUT FORMAT:\\nReturn only the final X post.\\nDo not include explanations or commentary.\", messages: [{ role: \"user\", content: `Create an engaging X post about the following\ntopic.\n\nTOPIC:\n${$json.Topic}\n\nRESEARCH INFORMATION:\n${$json.Research_Context}\n\nIdentify the most interesting insight and\ncommunicate it in a concise and engaging manner.\n\nThe content should be relevant to technology\nprofessionals and business leaders.\n\nEnsure the final response is within 280 characters.` }], temperature: 0.4 }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "9717b940-9cdf-40a7-b255-da28a89f23d8",
+      "name": "Anthropic - X Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        80
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "pYRVz4rqDxRJYUmZ",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "08e34a58-86d0-4043-b2c0-5b3ae42e4cf4",
+              "name": "X_Post",
+              "value": "={{ $json.content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dfdd49f4-f2ea-4d3a-9c36-cf322a2a8a02",
+      "name": "Prepare X Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1440,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({ model: \"claude-haiku-4-5-20251001\", max_tokens: 1024, system: \"You are an experienced technology journalist,\\nprofessional blog writer and technology\\ncontent strategist.\\n\\nYour responsibility is to create informative,\\nengaging and technically accurate blog summaries\\nbased on the research provided.\\n\\nOBJECTIVE:\\n\\nGenerate a high-quality blog summary that\\nexplains the topic, its significance and its\\nrelevance to the technology industry.\\n\\nCONTENT GUIDELINES:\\n\\n1. Start with a meaningful introduction that\\n   establishes the importance of the topic.\\n\\n2. Explain the concept clearly and accurately.\\n\\n3. Include important findings and insights\\n   from the supplied research.\\n\\n4. Discuss relevant enterprise applications\\n   and practical use cases.\\n\\n5. Explain the business or technological\\n   implications wherever supported by research.\\n\\n6. Maintain logical flow between paragraphs.\\n\\n7. Use technically accurate terminology.\\n\\n8. Write in a professional but accessible style.\\n\\n9. Avoid unnecessary promotional language.\\n\\n10. Never invent statistics, facts, quotations\\n    or research findings.\\n\\n11. Do not repeat the same information.\\n\\n12. End with a meaningful conclusion.\\n\\nLENGTH REQUIREMENT:\\n\\nThe final blog summary must contain\\n150-200 words.\\n\\nQUALITY REQUIREMENTS:\\n\\n- Use the supplied research as the factual basis.\\n- Maintain factual accuracy.\\n- Do not copy entire sentences from sources.\\n- Avoid unsupported predictions.\\n- Make the content useful to technology\\n  professionals and business readers.\\n\\nOUTPUT FORMAT:\\n\\nReturn only the final blog summary.\\n\\nDo not include explanations, instructions\\nor commentary about the writing process.\", messages: [{ role: \"user\", content: `Write a blog summary on the following topic.\n\nTOPIC:\n${$json.Topic}\n\nRESEARCH INFORMATION:\n${$json.Research_Context}\n\nTASK:\n\nAnalyze the supplied research and identify\nthe most important information about the topic.\n\nExplain the concept, its relevance, important\nindustry insights and practical enterprise\napplications.\n\nPresent the information in a clear,\ninformative and well-structured manner.\n\nUse the research as your factual foundation.\n\nEnsure the final output follows all the\ninstructions provided in the System message.\n\nThe final blog summary must contain\n150-200 words.` }], temperature: 0.4 }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "aa052f39-4077-47c5-84f2-c4b20defa6c3",
+      "name": "Anthropic - Blog Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        320
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "pYRVz4rqDxRJYUmZ",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2803bfef-c7a0-4b7e-be73-62c4a21d7f54",
+              "name": "Blog_Summary",
+              "value": "={{ $json.content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b91a0457-097e-4b09-b8c4-54b161e7c08d",
+      "name": "Prepare Blog Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1472,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "1375012d-1ea3-4249-856f-6c05666c0ea7",
+      "name": "Merge LinkedIn + X",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1664,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "5d01c501-f16f-4984-b97b-0809112b97be",
+      "name": "Merge All Content",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1888,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1nx5sujHArfQ5Lhxm7Duhz12UNZRm_JWYbEXd1Vy1JnA",
+          "mode": "list",
+          "cachedResultName": "AI_Content_Creator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nx5sujHArfQ5Lhxm7Duhz12UNZRm_JWYbEXd1Vy1JnA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nx5sujHArfQ5Lhxm7Duhz12UNZRm_JWYbEXd1Vy1JnA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $json.Topic }}",
+            "Status": "Completed",
+            "LinkedIn_Post": "={{ $json.LinkedIn_Post }}",
+            "X_Post": "={{ $json.X_Post }}",
+            "Blog_Summary": "={{ $json.Blog_Summary }}"
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn_Post",
+              "displayName": "LinkedIn_Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "X_Post",
+              "displayName": "X_Post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Blog_Summary",
+              "displayName": "Blog_Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Published_Date",
+              "displayName": "Published_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d8c5b4b6-655d-40fe-93ab-7e7930b3f8fe",
+      "name": "Update Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2112,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gqviizMI0yNUDfSM",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Topic": {
+      "main": [
+        [
+          {
+            "node": "Skip Completed Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Completed Topics": {
+      "main": [
+        [
+          {
+            "node": "Pick Next Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Next Topic": {
+      "main": [
+        [
+          {
+            "node": "Tavily – Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily – Research": {
+      "main": [
+        [
+          {
+            "node": "Split Research Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Research Results": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Research": {
+      "main": [
+        [
+          {
+            "node": "Prepare Research Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Research Context": {
+      "main": [
+        [
+          {
+            "node": "Anthropic - LinkedIn Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Anthropic - X Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Anthropic - Blog Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic - LinkedIn Generator": {
+      "main": [
+        [
+          {
+            "node": "Prepare LinkedIn Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare LinkedIn Output": {
+      "main": [
+        [
+          {
+            "node": "Merge LinkedIn + X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic - X Generator": {
+      "main": [
+        [
+          {
+            "node": "Prepare X Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare X Output": {
+      "main": [
+        [
+          {
+            "node": "Merge LinkedIn + X",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Anthropic - Blog Generator": {
+      "main": [
+        [
+          {
+            "node": "Prepare Blog Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Blog Output": {
+      "main": [
+        [
+          {
+            "node": "Merge All Content",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge LinkedIn + X": {
+      "main": [
+        [
+          {
+            "node": "Merge All Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Content": {
+      "main": [
+        [
+          {
+            "node": "Update Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "34d1434c-6c0a-4ede-be3d-e3a3adfb254f",
+  "meta": {
+    "instanceId": "8c7b49699843b0b952a2cb2e498f34f2b4fac7cf3282ac5587c12523256d444a"
+  },
+  "nodeGroups": [],
+  "id": "50IaByCWwOgGOODe",
+  "tags": []
+}
