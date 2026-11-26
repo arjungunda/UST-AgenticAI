@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<scheme version="2.0" title="02_Classification_Fraud_Orange_Workflow" description="Classification Fraud Pipeline: File -> Logistic Regression -> Test and Score -> Confusion Matrix &amp; ROC Analysis">
+  <nodes>
+    <node id="0" name="File" qualified_name="Orange.widgets.data.owfile.OWFile" project_name="Orange3" version="" title="File (classification_fraud.csv)" position="(80, 200)" />
+    <node id="1" name="Logistic Regression" qualified_name="Orange.widgets.model.owlogisticregression.OWLogisticRegression" project_name="Orange3" version="" title="Logistic Regression" position="(300, 120)" />
+    <node id="2" name="Test and Score" qualified_name="Orange.widgets.evaluate.owtestlearners.OWTestLearners" project_name="Orange3" version="" title="Test and Score (AUC, F1, Precision, Recall)" position="(520, 200)" />
+    <node id="3" name="Confusion Matrix" qualified_name="Orange.widgets.evaluate.owconfusionmatrix.OWConfusionMatrix" project_name="Orange3" version="" title="Confusion Matrix (TP, FP, FN, TN)" position="(760, 120)" />
+    <node id="4" name="ROC Analysis" qualified_name="Orange.widgets.evaluate.owrocanalysis.OWROCAnalysis" project_name="Orange3" version="" title="ROC Analysis" position="(760, 280)" />
+  </nodes>
+  <links>
+    <link id="0" source_node_id="0" sink_node_id="2" source_channel="Data" sink_channel="Data" enabled="true" />
+    <link id="1" source_node_id="1" sink_node_id="2" source_channel="Learner" sink_channel="Learner" enabled="true" />
+    <link id="2" source_node_id="2" sink_node_id="3" source_channel="Evaluation Results" sink_channel="Evaluation Results" enabled="true" />
+    <link id="3" source_node_id="2" sink_node_id="4" source_channel="Evaluation Results" sink_channel="Evaluation Results" enabled="true" />
+  </links>
+</scheme>
